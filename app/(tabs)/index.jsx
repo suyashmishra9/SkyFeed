@@ -135,10 +135,12 @@ export default function HomeScreen() {
                         <ThemedText style={styles.forecastDate}>
                           {new Date(day.date).toLocaleDateString('en', { weekday: 'short' })}
                         </ThemedText>
-                        <WeatherIcon 
-                          iconCode={day.icon} 
-                          size={40} 
-                        />
+                        <View style={styles.forecastIcon}>
+                          <WeatherIcon 
+                            iconCode={day.icon} 
+                            size={40} 
+                          />
+                        </View>
                         <ThemedText style={styles.forecastTemp}>
                           {day.temperature}°{state.temperatureUnit === 'metric' ? 'C' : 'F'}
                         </ThemedText>
@@ -365,19 +367,24 @@ const styles = StyleSheet.create({
     padding: 16,
     marginRight: 16,
     backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    minWidth: 90,
+    borderRadius: 16,
+    minWidth: 100,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
   },
   forecastDate: {
     fontSize: 14,
     color: '#8E8E93',
-    marginBottom: 12,
+    marginBottom: 8,
     fontWeight: '600',
+  },
+  forecastIcon: {
+    marginVertical: 8,
   },
   forecastTemp: {
     fontSize: 16,
