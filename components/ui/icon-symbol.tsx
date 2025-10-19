@@ -42,6 +42,10 @@ const MAPPING = {
   'info.circle.fill': 'info',
   'cloud.slash.fill': 'cloud-off',
   'cloud.fill': 'cloud',
+  'arrow.right': 'arrow-forward',
+  'arrow.forward': 'arrow-forward',
+  'arrow.right.circle': 'arrow-forward',
+  'exclamationmark.triangle.fill': 'warning',
 } as IconMapping;
 
 /**

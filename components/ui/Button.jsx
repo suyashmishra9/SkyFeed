@@ -1,4 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { IconSymbol } from './icon-symbol';
 
 export function Button({ 
   title, 
@@ -39,7 +40,7 @@ export function Button({
         />
       ) : (
         <>
-          {icon && <Text style={styles.icon}>{icon}</Text>}
+          {icon && <IconSymbol name={icon} size={16} color={variant === 'primary' ? '#FFFFFF' : '#007AFF'} style={styles.icon} />}
           <Text style={textStyle}>{title}</Text>
         </>
       )}
@@ -123,7 +124,6 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 8,
-    fontSize: 16,
   },
 });
 

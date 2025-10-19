@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Dimensions, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../../components/themed-text';
@@ -211,9 +212,9 @@ export default function HomeScreen() {
               ))}
               <Button 
                 title="View More News" 
-                onPress={() => {}} // Navigate to news tab
-                variant="ghost"
-                size="md"
+                onPress={() => router.push('/(tabs)/explore')}
+                variant="outline"
+                size="lg"
                 style={styles.newsMoreButton}
                 icon="arrow.right"
               />
@@ -454,6 +455,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   newsMoreButton: {
-    marginTop: 8,
+    marginTop: 16,
+    marginHorizontal: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
 });
