@@ -1,13 +1,17 @@
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useApp } from '@/context/AppContext';
-import { NewsService } from '@/services/newsService';
-import React from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemedText } from '../../components/themed-text';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { GradientBackground } from '../../components/ui/GradientBackground';
+import { IconSymbol } from '../../components/ui/icon-symbol';
+import { LoadingScreen } from '../../components/ui/LoadingScreen';
+import { useApp } from '../../context/AppContext';
+import { NewsService } from '../../services/newsService';
 
 export default function SettingsScreen() {
   const { state, dispatch } = useApp();
+  const insets = useSafeAreaInsets();
 
   const toggleTemperatureUnit = () => {
     const newUnit = state.temperatureUnit === 'metric' ? 'imperial' : 'metric';
@@ -49,177 +53,211 @@ export default function SettingsScreen() {
 
   const availableCategories = NewsService.getAvailableCategories();
 
+  // Show loading screen if no location yet (initial app load)
+  if (!state.location && !state.locationError) {
+    return <LoadingScreen message="Loading settings..." />;
+  }
+
   return (
-    <ScrollView style={styles.container}>
-      <ThemedView style={styles.header}>
-        <ThemedText type="title" style={styles.title}>Settings</ThemedText>
-        <ThemedText style={styles.subtitle}>Customize your SkyFeed experience</ThemedText>
-      </ThemedView>
+    <GradientBackground variant="settings" style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
+          <ThemedText style={styles.title}>Settings</ThemedText>
+          <ThemedText style={styles.subtitle}>Customize your SkyFeed experience</ThemedText>
+        </View>
 
-      {/* Temperature Unit Settings */}
-      <ThemedView style={styles.section}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>Temperature Units</ThemedText>
-        <ThemedView style={styles.settingItem}>
-          <ThemedView style={styles.settingInfo}>
+        {/* Temperature Unit Settings */}
+        <Card variant="elevated" style={styles.section}>
+          <View style={styles.sectionHeader}>
             <IconSymbol name="thermometer" size={24} color="#007AFF" />
-            <ThemedView style={styles.settingText}>
-              <ThemedText style={styles.settingLabel}>Temperature Unit</ThemedText>
-              <ThemedText style={styles.settingDescription}>
-                Currently using {state.temperatureUnit === 'metric' ? 'Celsius (°C)' : 'Fahrenheit (°F)'}
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
-          <TouchableOpacity 
-            style={styles.toggleButton}
-            onPress={toggleTemperatureUnit}
-          >
-            <ThemedText style={styles.toggleText}>
-              {state.temperatureUnit === 'metric' ? '°C' : '°F'}
-            </ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
-
-      {/* News Categories Settings */}
-      <ThemedView style={styles.section}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>News Categories</ThemedText>
-        <ThemedText style={styles.sectionDescription}>
-          Select categories you're interested in (weather-based filtering will still apply)
-        </ThemedText>
-        
-        {availableCategories.map((category) => {
-          const isSelected = state.selectedNewsCategories?.includes(category) || false;
-          return (
-            <TouchableOpacity
-              key={category}
-              style={styles.categoryItem}
-              onPress={() => toggleNewsCategory(category)}
-            >
-              <ThemedView style={styles.categoryInfo}>
-                <IconSymbol 
-                  name="newspaper" 
-                  size={20} 
-                  color={isSelected ? "#007AFF" : "#999"} 
-                />
-                <ThemedText style={[
-                  styles.categoryLabel,
-                  { color: isSelected ? "#007AFF" : "#333" }
-                ]}>
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
+            <ThemedText style={styles.sectionTitle}>Temperature Units</ThemedText>
+          </View>
+          
+          <View style={styles.settingItem}>
+            <View style={styles.settingInfo}>
+              <IconSymbol name="thermometer" size={28} color="#007AFF" />
+              <View style={styles.settingText}>
+                <ThemedText style={styles.settingLabel}>Temperature Unit</ThemedText>
+                <ThemedText style={styles.settingDescription}>
+                  Currently using {state.temperatureUnit === 'metric' ? 'Celsius (°C)' : 'Fahrenheit (°F)'}
                 </ThemedText>
-              </ThemedView>
-              <Switch
-                value={isSelected}
-                onValueChange={() => toggleNewsCategory(category)}
-                trackColor={{ false: "#E5E5EA", true: "#007AFF" }}
-                thumbColor={isSelected ? "#FFFFFF" : "#FFFFFF"}
-              />
-            </TouchableOpacity>
-          );
-        })}
-      </ThemedView>
+              </View>
+            </View>
+            <Button
+              title={state.temperatureUnit === 'metric' ? '°C' : '°F'}
+              onPress={toggleTemperatureUnit}
+              variant="outline"
+              size="md"
+            />
+          </View>
+        </Card>
 
-      {/* Weather Info */}
-      {state.weather && (
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>Current Weather Filter</ThemedText>
-          <ThemedView style={styles.weatherInfo}>
-            <IconSymbol name="cloud.fill" size={24} color="#007AFF" />
-            <ThemedView style={styles.weatherText}>
-              <ThemedText style={styles.weatherLabel}>
-                {state.weather.temperature}°{state.temperatureUnit === 'metric' ? 'C' : 'F'} - {state.weather.condition}
-              </ThemedText>
-              <ThemedText style={styles.weatherDescription}>
-                {state.weather.temperature < 10 
-                  ? 'Showing depressing news due to cold weather'
-                  : state.weather.temperature > 25
-                  ? 'Showing fear-related news due to hot weather'
-                  : 'Showing positive news due to cool weather'
-                }
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
-      )}
+        {/* News Categories Settings */}
+        <Card variant="elevated" style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconSymbol name="newspaper.fill" size={24} color="#007AFF" />
+            <ThemedText style={styles.sectionTitle}>News Categories</ThemedText>
+          </View>
+          <ThemedText style={styles.sectionDescription}>
+            Select categories you're interested in (weather-based filtering will still apply)
+          </ThemedText>
+          
+          {availableCategories.map((category) => {
+            const isSelected = state.selectedNewsCategories?.includes(category) || false;
+            return (
+              <TouchableOpacity
+                key={category}
+                style={styles.categoryItem}
+                onPress={() => toggleNewsCategory(category)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.categoryInfo}>
+                  <IconSymbol 
+                    name="newspaper" 
+                    size={22} 
+                    color={isSelected ? "#007AFF" : "#8E8E93"} 
+                  />
+                  <ThemedText style={[
+                    styles.categoryLabel,
+                    { color: isSelected ? "#007AFF" : "#1C1C1E" }
+                  ]}>
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </ThemedText>
+                </View>
+                <Switch
+                  value={isSelected}
+                  onValueChange={() => toggleNewsCategory(category)}
+                  trackColor={{ false: "#E5E5EA", true: "#007AFF" }}
+                  thumbColor={isSelected ? "#FFFFFF" : "#FFFFFF"}
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </Card>
 
-      {/* App Info */}
-      <ThemedView style={styles.section}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>App Information</ThemedText>
-        <ThemedView style={styles.infoItem}>
-          <ThemedText style={styles.infoLabel}>Version</ThemedText>
-          <ThemedText style={styles.infoValue}>1.0.0</ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.infoItem}>
-          <ThemedText style={styles.infoLabel}>Weather API</ThemedText>
-          <ThemedText style={styles.infoValue}>OpenWeatherMap</ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.infoItem}>
-          <ThemedText style={styles.infoLabel}>News API</ThemedText>
-          <ThemedText style={styles.infoValue}>NewsAPI</ThemedText>
-        </ThemedView>
-      </ThemedView>
+        {/* Weather Info */}
+        {state.weather && (
+          <Card variant="elevated" style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <IconSymbol name="cloud.fill" size={24} color="#007AFF" />
+              <ThemedText style={styles.sectionTitle}>Current Weather Filter</ThemedText>
+            </View>
+            <View style={styles.weatherInfo}>
+              <IconSymbol name="cloud.fill" size={32} color="#007AFF" />
+              <View style={styles.weatherText}>
+                <ThemedText style={styles.weatherLabel}>
+                  {state.weather.temperature}°{state.temperatureUnit === 'metric' ? 'C' : 'F'} - {state.weather.condition}
+                </ThemedText>
+                <ThemedText style={styles.weatherDescription}>
+                  {state.weather.temperature < 10 
+                    ? 'Showing depressing news due to cold weather'
+                    : state.weather.temperature > 25
+                    ? 'Showing fear-related news due to hot weather'
+                    : 'Showing positive news due to cool weather'
+                  }
+                </ThemedText>
+              </View>
+            </View>
+          </Card>
+        )}
 
-      {/* Actions */}
-      <ThemedView style={styles.section}>
-        <TouchableOpacity style={styles.actionButton} onPress={clearCache}>
-          <IconSymbol name="trash" size={20} color="#FF3B30" />
-          <ThemedText style={styles.actionButtonText}>Clear Cache</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-    </ScrollView>
+        {/* App Info */}
+        <Card variant="elevated" style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <IconSymbol name="info.circle.fill" size={24} color="#007AFF" />
+            <ThemedText style={styles.sectionTitle}>App Information</ThemedText>
+          </View>
+          <View style={styles.infoItem}>
+            <ThemedText style={styles.infoLabel}>Version</ThemedText>
+            <ThemedText style={styles.infoValue}>1.0.0</ThemedText>
+          </View>
+          <View style={styles.infoItem}>
+            <ThemedText style={styles.infoLabel}>Weather API</ThemedText>
+            <ThemedText style={styles.infoValue}>OpenWeatherMap</ThemedText>
+          </View>
+          <View style={styles.infoItem}>
+            <ThemedText style={styles.infoLabel}>News API</ThemedText>
+            <ThemedText style={styles.infoValue}>NewsAPI</ThemedText>
+          </View>
+        </Card>
+
+        {/* Actions */}
+        <Card variant="elevated" style={styles.section}>
+          <Button 
+            title="Clear Cache" 
+            onPress={clearCache}
+            variant="outline"
+            size="lg"
+            style={styles.actionButton}
+            icon="trash"
+          />
+        </Card>
+
+        {/* Bottom padding for tab bar */}
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+  },
+  scrollView: {
+    flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    alignItems: 'center',
   },
   title: {
-    color: 'white',
-    fontSize: 32,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 36,
+    fontWeight: '800',
     marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
-    color: 'white',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 18,
     opacity: 0.9,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   section: {
-    margin: 16,
-    marginTop: 0,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#333',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    marginLeft: 12,
   },
   sectionDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-    lineHeight: 20,
+    fontSize: 16,
+    color: '#8E8E93',
+    marginBottom: 20,
+    lineHeight: 24,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   settingInfo: {
     flexDirection: 'row',
@@ -227,37 +265,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   settingText: {
-    marginLeft: 12,
+    marginLeft: 16,
     flex: 1,
   },
   settingLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1C1C1E',
     marginBottom: 4,
   },
   settingDescription: {
-    fontSize: 14,
-    color: '#666',
-  },
-  toggleButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  toggleText: {
-    color: 'white',
-    fontWeight: 'bold',
     fontSize: 16,
+    color: '#8E8E93',
   },
   categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#F2F2F7',
   },
   categoryInfo: {
     flexDirection: 'row',
@@ -265,60 +292,49 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryLabel: {
-    fontSize: 16,
-    marginLeft: 12,
-    fontWeight: '500',
+    fontSize: 18,
+    marginLeft: 16,
+    fontWeight: '600',
   },
   weatherInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
+    padding: 20,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
   },
   weatherText: {
-    marginLeft: 12,
+    marginLeft: 16,
     flex: 1,
   },
   weatherLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    marginBottom: 8,
   },
   weatherDescription: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 16,
+    color: '#8E8E93',
+    lineHeight: 24,
   },
   infoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
   infoLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  infoValue: {
-    fontSize: 14,
-    color: '#333',
+    fontSize: 16,
+    color: '#8E8E93',
     fontWeight: '500',
   },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    backgroundColor: '#fff5f5',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#FFE5E5',
-  },
-  actionButtonText: {
+  infoValue: {
     fontSize: 16,
-    color: '#FF3B30',
-    fontWeight: '600',
-    marginLeft: 8,
+    color: '#1C1C1E',
+    fontWeight: '700',
+  },
+  actionButton: {
+    marginTop: 8,
   },
 });

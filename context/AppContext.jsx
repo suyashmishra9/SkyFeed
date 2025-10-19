@@ -1,7 +1,7 @@
-import { NewsService } from '@/services/newsService';
-import { WeatherService } from '@/services/weatherService';
 import * as Location from 'expo-location';
-import React, { createContext, useContext, useEffect, useReducer } from 'react';
+import { createContext, useContext, useEffect, useReducer } from 'react';
+import { NewsService } from '../services/newsService';
+import { WeatherService } from '../services/weatherService';
 
 const AppContext = createContext(undefined);
 
@@ -134,10 +134,14 @@ export function AppProvider({ children }) {
   // Initialize location and fetch data
   useEffect(() => {
     const initializeApp = async () => {
-      const hasPermission = await requestLocationPermission();
-      if (hasPermission) {
-        try {
-          const location = await Location.getCurrentPositionAsync({});
+      try {
+        const hasPermission = await requestLocationPermission();
+        if (hasPermission) {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+            timeout: 10000,
+            maximumAge: 300000, // 5 minutes
+          });
           dispatch({ 
             type: 'SET_LOCATION', 
             payload: { 
@@ -145,12 +149,26 @@ export function AppProvider({ children }) {
               longitude: location.coords.longitude 
             } 
           });
-        } catch (error) {
+        } else {
+          // Fallback to default location (New York) if permission denied
           dispatch({ 
-            type: 'SET_LOCATION_ERROR', 
-            payload: 'Failed to get current location' 
+            type: 'SET_LOCATION', 
+            payload: { 
+              latitude: 40.7128, 
+              longitude: -74.0060 
+            } 
           });
         }
+      } catch (error) {
+        console.log('Location error:', error);
+        // Fallback to default location
+        dispatch({ 
+          type: 'SET_LOCATION', 
+          payload: { 
+            latitude: 40.7128, 
+            longitude: -74.0060 
+          } 
+        });
       }
     };
 

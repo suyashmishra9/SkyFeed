@@ -1,12 +1,17 @@
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useApp } from '@/context/AppContext';
-import React from 'react';
-import { Alert, Linking, RefreshControl, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, Linking, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemedText } from '../../components/themed-text';
+import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { GradientBackground } from '../../components/ui/GradientBackground';
+import { IconSymbol } from '../../components/ui/icon-symbol';
+import { LoadingScreen } from '../../components/ui/LoadingScreen';
+import { NewsCardSkeleton } from '../../components/ui/SkeletonLoader';
+import { useApp } from '../../context/AppContext';
 
 export default function NewsScreen() {
   const { state, fetchNewsData } = useApp();
+  const insets = useSafeAreaInsets();
 
   const onRefresh = async () => {
     await fetchNewsData();
@@ -26,196 +31,266 @@ export default function NewsScreen() {
   };
 
   const getWeatherCategoryInfo = () => {
-    if (!state.weather) return { title: 'General News', description: 'Showing general news headlines' };
+    if (!state.weather) return { 
+      title: 'General News', 
+      description: 'Showing general news headlines',
+      color: '#007AFF'
+    };
     
     const temp = state.weather.temperature;
     if (temp < 10) {
       return { 
         title: 'Cold Weather News', 
-        description: 'Showing depressing and serious news based on cold weather' 
+        description: 'Showing depressing and serious news based on cold weather',
+        color: '#4A90E2'
       };
     } else if (temp > 25) {
       return { 
         title: 'Hot Weather News', 
-        description: 'Showing fear-related and concerning news based on hot weather' 
+        description: 'Showing fear-related and concerning news based on hot weather',
+        color: '#FF6B6B'
       };
     } else {
       return { 
         title: 'Cool Weather News', 
-        description: 'Showing positive and uplifting news based on cool weather' 
+        description: 'Showing positive and uplifting news based on cool weather',
+        color: '#4ECDC4'
       };
     }
   };
 
   const categoryInfo = getWeatherCategoryInfo();
 
-  return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={state.newsLoading} onRefresh={onRefresh} />
-      }
-    >
-      <ThemedView style={styles.header}>
-        <ThemedText type="title" style={styles.title}>{categoryInfo.title}</ThemedText>
-        <ThemedText style={styles.subtitle}>{categoryInfo.description}</ThemedText>
-      </ThemedView>
+  // Show loading screen if no location yet (initial app load)
+  if (!state.location && !state.locationError) {
+    return <LoadingScreen message="Loading news..." />;
+  }
 
-      {state.newsLoading ? (
-        <ThemedView style={styles.loadingContainer}>
-          <ThemedText>Loading news...</ThemedText>
-        </ThemedView>
-      ) : state.newsError ? (
-        <ThemedView style={styles.errorContainer}>
-          <ThemedText style={styles.errorText}>{state.newsError}</ThemedText>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchNewsData}>
-            <ThemedText style={styles.retryButtonText}>Retry</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      ) : state.news.length > 0 ? (
-        <ThemedView style={styles.newsContainer}>
-          {state.news.map((article, index) => (
-            <TouchableOpacity 
-              key={index} 
-              style={styles.newsItem}
-              onPress={() => openArticle(article.url)}
-            >
-              <ThemedView style={styles.newsContent}>
-                <ThemedText type="defaultSemiBold" style={styles.newsTitle} numberOfLines={3}>
-                  {article.title}
-                </ThemedText>
-                <ThemedText style={styles.newsDescription} numberOfLines={3}>
-                  {article.description}
-                </ThemedText>
-                <ThemedView style={styles.newsFooter}>
-                  <ThemedText style={styles.newsSource}>{article.source.name}</ThemedText>
-                  <ThemedText style={styles.newsDate}>
-                    {new Date(article.publishedAt).toLocaleDateString()}
-                  </ThemedText>
-                </ThemedView>
-              </ThemedView>
-              <IconSymbol name="chevron.right" size={20} color="#999" />
-            </TouchableOpacity>
-          ))}
-        </ThemedView>
-      ) : (
-        <ThemedView style={styles.noDataContainer}>
-          <IconSymbol name="newspaper" size={60} color="#ccc" />
-          <ThemedText style={styles.noDataText}>No news available</ThemedText>
-          <ThemedText style={styles.noDataSubtext}>
-            Pull down to refresh or check your internet connection
-          </ThemedText>
-        </ThemedView>
-      )}
-    </ScrollView>
+  return (
+    <GradientBackground variant="news" style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl 
+            refreshing={state.newsLoading} 
+            onRefresh={onRefresh}
+            tintColor="#FFFFFF"
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
+          <ThemedText style={styles.title}>{categoryInfo.title}</ThemedText>
+          <ThemedText style={styles.subtitle}>{categoryInfo.description}</ThemedText>
+        </View>
+
+        {state.newsLoading ? (
+          <View style={styles.newsContainer}>
+            <NewsCardSkeleton />
+            <NewsCardSkeleton />
+            <NewsCardSkeleton />
+            <NewsCardSkeleton />
+            <NewsCardSkeleton />
+          </View>
+        ) : state.newsError ? (
+          <Card variant="elevated" style={styles.errorCard}>
+            <View style={styles.errorContainer}>
+              <IconSymbol name="exclamationmark.triangle.fill" size={64} color="#FF3B30" />
+              <ThemedText style={styles.errorText}>{state.newsError}</ThemedText>
+              <Button 
+                title="Retry" 
+                onPress={fetchNewsData}
+                variant="outline"
+                size="lg"
+                style={styles.retryButton}
+              />
+            </View>
+          </Card>
+        ) : state.news.length > 0 ? (
+          <View style={styles.newsContainer}>
+            {state.news.map((article, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={styles.newsItem}
+                onPress={() => openArticle(article.url)}
+                activeOpacity={0.7}
+              >
+                <Card variant="outlined" style={styles.newsCard}>
+                  <View style={styles.newsContent}>
+                    <ThemedText style={styles.newsTitle} numberOfLines={3}>
+                      {article.title}
+                    </ThemedText>
+                    <ThemedText style={styles.newsDescription} numberOfLines={3}>
+                      {article.description}
+                    </ThemedText>
+                    <View style={styles.newsFooter}>
+                      <View style={styles.sourceContainer}>
+                        <IconSymbol name="newspaper" size={16} color={categoryInfo.color} />
+                        <ThemedText style={[styles.newsSource, { color: categoryInfo.color }]}>
+                          {article.source.name}
+                        </ThemedText>
+                      </View>
+                      <ThemedText style={styles.newsDate}>
+                        {new Date(article.publishedAt).toLocaleDateString()}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <View style={styles.chevronContainer}>
+                    <IconSymbol name="chevron.right" size={20} color="#8E8E93" />
+                  </View>
+                </Card>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <Card variant="elevated" style={styles.noDataCard}>
+            <View style={styles.noDataContainer}>
+              <IconSymbol name="newspaper" size={80} color="#8E8E93" />
+              <ThemedText style={styles.noDataText}>No news available</ThemedText>
+              <ThemedText style={styles.noDataSubtext}>
+                Pull down to refresh or check your internet connection
+              </ThemedText>
+              <Button 
+                title="Refresh" 
+                onPress={onRefresh}
+                variant="outline"
+                size="lg"
+                style={styles.refreshButton}
+              />
+            </View>
+          </Card>
+        )}
+
+        {/* Bottom padding for tab bar */}
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+  },
+  scrollView: {
+    flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    alignItems: 'center',
   },
   title: {
-    color: 'white',
-    fontSize: 28,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '800',
     marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
-    color: 'white',
-    fontSize: 16,
-    opacity: 0.9,
-  },
-  loadingContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  errorContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  errorText: {
-    color: '#FF3B30',
-    textAlign: 'center',
-    marginBottom: 20,
-    fontSize: 16,
-  },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  noDataContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  noDataText: {
+    color: '#FFFFFF',
     fontSize: 18,
-    color: '#666',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  noDataSubtext: {
-    fontSize: 14,
-    color: '#999',
+    opacity: 0.9,
+    fontWeight: '500',
     textAlign: 'center',
   },
   newsContainer: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
   },
   newsItem: {
+    marginBottom: 16,
+  },
+  newsCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    marginBottom: 12,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    padding: 0,
   },
   newsContent: {
     flex: 1,
-    marginRight: 12,
+    padding: 20,
   },
   newsTitle: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 8,
-    lineHeight: 22,
+    fontSize: 20,
+    color: '#1C1C1E',
+    marginBottom: 12,
+    lineHeight: 28,
+    fontWeight: '700',
   },
   newsDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-    lineHeight: 20,
+    fontSize: 16,
+    color: '#8E8E93',
+    marginBottom: 16,
+    lineHeight: 24,
   },
   newsFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  sourceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   newsSource: {
-    fontSize: 12,
-    color: '#007AFF',
+    fontSize: 16,
     fontWeight: '600',
   },
   newsDate: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 14,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  chevronContainer: {
+    paddingRight: 20,
+    paddingVertical: 20,
+  },
+  errorCard: {
+    marginHorizontal: 20,
+    marginBottom: 32,
+  },
+  errorContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  errorText: {
+    color: '#FF3B30',
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 32,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  retryButton: {
+    marginTop: 8,
+  },
+  noDataCard: {
+    marginHorizontal: 20,
+    marginBottom: 32,
+  },
+  noDataContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  noDataText: {
+    fontSize: 22,
+    color: '#8E8E93',
+    marginTop: 20,
+    marginBottom: 12,
+    fontWeight: '700',
+  },
+  noDataSubtext: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  refreshButton: {
+    marginTop: 8,
   },
 });
