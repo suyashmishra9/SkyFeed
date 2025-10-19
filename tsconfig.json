@@ -6,5 +6,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+, "components/external-link.jsx", "components/hello-wave.jsx", "components/parallax-scroll-view.jsx", "components/themed-text.jsx", "components/themed-view.jsx", "components/ui/collapsible.jsx", "components/ui/icon-symbol.ios.jsx", "components/ui/icon-symbol.jsx", "constants/theme.js", "hooks/use-color-scheme.js", "hooks/use-color-scheme.web.js", "hooks/use-theme-color.js"  ]
 }
