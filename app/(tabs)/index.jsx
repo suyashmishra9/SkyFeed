@@ -313,12 +313,17 @@ const styles = StyleSheet.create({
   temperatureContainer: {
     marginLeft: 20,
     flex: 1,
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
   temperature: {
     fontSize: 56,
     fontWeight: '800',
     color: '#1C1C1E',
     marginBottom: 4,
+    lineHeight: 64,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   condition: {
     fontSize: 18,
