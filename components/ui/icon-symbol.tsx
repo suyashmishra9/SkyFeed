@@ -46,6 +46,7 @@ const MAPPING = {
   'arrow.forward': 'arrow-forward',
   'arrow.right.circle': 'arrow-forward',
   'exclamationmark.triangle.fill': 'warning',
+  'thermometer': 'thermostat',
 } as IconMapping;
 
 /**

@@ -118,8 +118,23 @@ export function AppProvider({ children }) {
         );
         newsData = await NewsService.getWeatherBasedNews(weatherCategory);
       } else {
-        // Fallback to general headlines
-        newsData = await NewsService.getNewsHeadlines();
+        // Use selected categories or fallback to general headlines
+        if (state.selectedNewsCategories && state.selectedNewsCategories.length > 0) {
+          // Fetch news for each selected category
+          const allNews = [];
+          for (const category of state.selectedNewsCategories) {
+            try {
+              const categoryNews = await NewsService.getNewsHeadlines(category);
+              allNews.push(...categoryNews.slice(0, 5)); // Limit to 5 articles per category
+            } catch (error) {
+              console.warn(`Failed to fetch news for category ${category}:`, error);
+            }
+          }
+          newsData = allNews;
+        } else {
+          // Fallback to general headlines
+          newsData = await NewsService.getNewsHeadlines();
+        }
       }
       
       dispatch({ type: 'SET_NEWS_DATA', payload: newsData });
@@ -188,6 +203,13 @@ export function AppProvider({ children }) {
       fetchNewsData();
     }
   }, [state.weather]);
+
+  // Fetch news data when categories change (only if no weather-based filtering)
+  useEffect(() => {
+    if (!state.weather && state.selectedNewsCategories) {
+      fetchNewsData();
+    }
+  }, [state.selectedNewsCategories]);
 
   const value = {
     state,
